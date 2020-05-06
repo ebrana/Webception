@@ -236,9 +236,12 @@ class Codeception
         // Attempt to set the correct writes to Codeceptions Log path.
         @chmod($this->getLogPath(), 0777);
 
+        // eBRANA hack to set module-specific CWD
+        $modulePath = preg_replace('/(.*application\/modules\/\w+)\/.*/', '$1', $test->getPathname());
+
         // Run the helper function (as it's not specific to Codeception)
         // which returns the result of running the terminal command into an array.
-        $output  = run_terminal_command($command);
+        $output  = array_merge([$command], run_terminal_command($command, $modulePath));
 
         // Add the log to the test which also checks to see if there was a pass/fail.
         $test->setLog($output);
