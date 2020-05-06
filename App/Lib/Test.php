@@ -227,6 +227,11 @@ class Test
         return $this->filename;
     }
 
+    public function getPathname()
+    {
+        return $this->file->getPathname();
+    }
+
     /**
      * Set if the test has been passed.
      *

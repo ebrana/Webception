@@ -17,7 +17,7 @@ if (! function_exists('run_terminal_command')) {
      * @param  string $command
      * @return array  Each array entry is a line of output from running the command.
      */
-    function run_terminal_command($command)
+    function run_terminal_command($command, $cwd = '')
     {
         $output = array();
 
@@ -29,7 +29,7 @@ if (! function_exists('run_terminal_command')) {
 
         flush();
 
-        $process = proc_open($command, $spec, $pipes, realpath('./'), (!empty($_ENV) ? $_ENV : NULL));
+        $process = proc_open($command, $spec, $pipes, $cwd ? $cwd : realpath('./'), (!empty($_ENV) ? $_ENV : NULL));
 
         if (is_resource($process)) {
 
