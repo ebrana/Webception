@@ -19,6 +19,11 @@ if (! function_exists('run_terminal_command')) {
      */
     function run_terminal_command($command, $cwd = '')
     {
+        exec('cd ' . $cwd . ' && ' . $command, $output);
+        return $output;
+
+        // USING EXEC TO AVOID STUCKED PROCESSES
+        /*
         $output = array();
 
         $spec = array(
@@ -46,7 +51,7 @@ if (! function_exists('run_terminal_command')) {
             }
         }
 
-        return $output;
+        return $output;*/
     }
 
 }

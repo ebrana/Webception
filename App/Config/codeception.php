@@ -16,6 +16,26 @@ if (file_exists(__DIR__.'/codeception-local.php')) {
     $localConfig = require(__DIR__.'/codeception-local.php');
 }
 
+// eBRÁNA - load modules
+$applicationDir = realpath(__DIR__.
+    DIRECTORY_SEPARATOR.'..'.
+    DIRECTORY_SEPARATOR.'..'.
+    DIRECTORY_SEPARATOR.'..'.
+    DIRECTORY_SEPARATOR.'..'.
+    DIRECTORY_SEPARATOR.'application'
+);
+
+$modulesDir = $applicationDir.DIRECTORY_SEPARATOR.'modules';
+$modules = array_diff(scandir($modulesDir), array('..', '.'));
+
+$moduleConfigs = array_map(function ($module) use ($modulesDir) {
+    return $modulesDir.DIRECTORY_SEPARATOR.$module.DIRECTORY_SEPARATOR.'codeception.yml';
+}, $modules);
+
+$existingModuleConfigs = array_filter(array_combine($modules, $moduleConfigs), function ($config) {
+    return file_exists($config);
+});
+
 return array_merge_recursive(array(
 
     /*
@@ -35,10 +55,12 @@ return array_merge_recursive(array(
     |
     */
 
-    'sites' => array(
-        'Webception'         => dirname(__FILE__) .DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'
-            .DIRECTORY_SEPARATOR.'codeception.yml',
+    'sites' => array_merge(
+        ['All tests' => $applicationDir.DIRECTORY_SEPARATOR.'codeception.yml'],
+        $existingModuleConfigs
     ),
+
+    'modules' => $existingModuleConfigs,
 
     /*
     |--------------------------------------------------------------------------
@@ -59,10 +81,7 @@ return array_merge_recursive(array(
     |
     */
 
-    'executable' =>
-        dirname(__FILE__) .
-        DIRECTORY_SEPARATOR.'..'.
-        DIRECTORY_SEPARATOR.'..'.
+    'executable' => $applicationDir.
         DIRECTORY_SEPARATOR.'vendor'.
         DIRECTORY_SEPARATOR.'codeception'.
         DIRECTORY_SEPARATOR.'codeception'.
@@ -76,9 +95,9 @@ return array_merge_recursive(array(
     */
 
     'tests' => array(
-        'acceptance' => TRUE,
-        'functional' => TRUE,
-        'unit'       => TRUE,
+        'webdriver'  => true,
+        'phpbrowser' => true,
+        'unit'       => false,
     ),
 
     /*

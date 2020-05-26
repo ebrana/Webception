@@ -16,9 +16,14 @@
                 <ul class="left title-area">
                     <li {% if codeception.site.hasChoices() %}class="has-dropdown"{% endif %}>
                         {% if codeception.site.ready() %}
-                            <a href="#"><strong>Current Tests:</strong> {{ codeception.site.getName() }}</a>
+                            {% if module_environments %}
+                                <a href="#"><strong>All modules</strong></a>
+                            {% else %}
+                                <a href="#"><strong>{{ codeception.site.getName() }}</strong></a>
+                            {% endif %}
                             {% if codeception.site.hasChoices() %}
                                 <ul class="dropdown">
+                                    <li><a href="/">All modules</a></li>
                                 {% for hash, site in codeception.site.getSites() %}
                                     <li><a href="/?hash={{ hash }}">{{ site.name }}</a></li>
                                 {% endfor %}
@@ -50,13 +55,13 @@
 
         <br><br>
 
-        <div class="large-12 columns">
+        <!--<div class="large-12 columns">
             <h1 class="left">
                 {{ webception.name|raw }}
             </h1>
         </div>
 
-        <hr>
+        <hr>-->
 
         <div class="large-12 columns">
 

@@ -75,6 +75,7 @@ class Codeception
         if ($this->yaml = $this->loadConfig($site->getConfigPath(), $site->getConfigFile())) {
             $this->config = array_merge($config, $this->yaml);
             $this->loadTests();
+            $this->loadModules();
         }
     }
 
@@ -123,7 +124,24 @@ class Codeception
                 if (! $active)
                     break;
 
-                if ($suite = \Symfony\Component\Yaml\Yaml::parse($config['paths']['tests'] . "/$type.suite.yml")) {
+                // eBRÁNA - support codeception configs with includes
+                if (isset($config['include'])) {
+                    $suite = [];
+                    $config['paths']['tests'] = [];
+                    foreach ($config['include'] as $includePath) {
+                        $include = \Symfony\Component\Yaml\Yaml::parse($path.$includePath.DIRECTORY_SEPARATOR.'codeception.yml');
+                        if (!is_array($include)) continue;
+
+                        $config['paths']['tests'][] = $path.$includePath.DIRECTORY_SEPARATOR.$include['paths']['tests'];
+                        $includeSuite = \Symfony\Component\Yaml\Yaml::parse($path.$includePath.DIRECTORY_SEPARATOR.$include['paths']['tests'].DIRECTORY_SEPARATOR."$type.suite.yml");
+                        $suite = array_merge_recursive($suite, $includeSuite);
+                    }
+                } else {
+                    $suite = \Symfony\Component\Yaml\Yaml::parse($config['paths']['tests'] . "/$type.suite.yml");
+                }
+
+
+                if ($suite) {
                     if (isset($suite['env'])) {
                         $config['env'][$type] = array_keys($suite['env']);
                     }
@@ -134,6 +152,7 @@ class Codeception
         return $config;
     }
 
+
     /**
      * Load the Codeception tests from disk.
      */
@@ -143,32 +162,45 @@ class Codeception
             return;
 
         foreach ($this->config['tests'] as $type => $active) {
-
             // If the test type has been disabled in the Webception config,
             //      skip processing the directory read for those tests.
             if (! $active)
                 break;
 
-            $files = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator("{$this->config['paths']['tests']}".$this->config['DS']."{$type}".$this->config['DS'], \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
-            );
+            $testPaths = is_array($this->config['paths']['tests']) ? $this->config['paths']['tests'] : [$this->config['paths']['tests']];
+            foreach ($testPaths as $testPath) {
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator("{$testPath}" . $this->config['DS'] . "{$type}" . $this->config['DS'], \FilesystemIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                );
 
-            // Iterate through all the files, and filter out
-            //      any files that are in the ignore list.
-            foreach ($files as $file) {
+                // Iterate through all the files, and filter out
+                //      any files that are in the ignore list.
+                foreach ($files as $file) {
+                    if (!in_array($file->getFilename(), $this->config['ignore'])
+                        && $file->isFile()) {
+                        // Declare a new test and add it to the list.
+                        $test = new Test();
+                        $test->init($type, $file);
+                        $this->addTest($test);
+                        unset($test);
+                    }
 
-                if (! in_array($file->getFilename(), $this->config['ignore'])
-                   && $file->isFile())
-                {
-                    // Declare a new test and add it to the list.
-                    $test = new Test();
-                    $test->init($type, $file);
-                    $this->addTest($test);
-                    unset($test);
                 }
-
             }
+        }
+    }
+
+    /**
+     * Load the Codeception tests from disk.
+     */
+    public function loadModules()
+    {
+        foreach ($this->config['modules'] as $name => $path) {
+            $module = new Module();
+            $module->init($name, $path);
+            $this->addModule($module);
+            unset($module);
         }
     }
 
@@ -186,6 +218,16 @@ class Codeception
     }
 
     /**
+     * Add a Module to the list.
+     *
+     * @param Test $test
+     */
+    public function addModule(Module $module)
+    {
+        $this->modules[$module->getType()][$module->getHash()] = $module;
+    }
+
+    /**
      * Get the complete test list.
      *
      * @param array $test List of loaded Tests.
@@ -193,6 +235,16 @@ class Codeception
     public function getTests()
     {
         return $this->tests;
+    }
+
+    /**
+     * Get the complete modules list.
+     *
+     * @param array $module List of loaded Modules.
+     */
+    public function getModules()
+    {
+        return $this->modules;
     }
 
     /**
@@ -206,6 +258,14 @@ class Codeception
     {
         if (isset($this->tests[$type][$hash]))
             return $this->tests[$type][$hash];
+
+        return FALSE;
+    }
+
+    public function getModule($type, $hash)
+    {
+        if (isset($this->modules[$type][$hash]))
+            return $this->modules[$type][$hash];
 
         return FALSE;
     }
@@ -236,7 +296,7 @@ class Codeception
         // Attempt to set the correct writes to Codeceptions Log path.
         @chmod($this->getLogPath(), 0777);
 
-        // eBRANA hack to set module-specific CWD
+        // eBRÁNA - hack to set module-specific CWD
         $modulePath = preg_replace('/(.*application\/modules\/\w+)\/.*/', '$1', $test->getPathname());
 
         // Run the helper function (as it's not specific to Codeception)
@@ -247,6 +307,35 @@ class Codeception
         $test->setLog($output);
 
         return $test;
+    }
+
+    /**
+     * Given a test, run the Codeception test.
+     *
+     * @param  Module $module Current test to Run.
+     * @return Module $module Updated test with log and result.
+     */
+    public function runModule(Module $module)
+    {
+        $env = $this->getEnvironments($module->getType());
+
+        // Get the full command path to run the test.
+        $command = $this->getCommandPath($module->getType(), '', $env);
+
+        // Attempt to set the correct writes to Codeceptions Log path.
+        @chmod($this->getLogPath(), 0777);
+
+        // eBRANA hack to set module-specific CWD
+        $modulePath = preg_replace('/(.*application\/modules\/\w+)\/.*/', '$1', $module->getPath());
+
+        // Run the helper function (as it's not specific to Codeception)
+        // which returns the result of running the terminal command into an array.
+        $output  = array_merge([$modulePath, $command], run_terminal_command($command, $modulePath));
+
+        // Add the log to the test which also checks to see if there was a pass/fail.
+        $module->setLog($output);
+
+        return $module;
     }
 
     public function getEnvironments($type)
@@ -295,7 +384,7 @@ class Codeception
                 $this->config['executable'],        // Codeception Executable
                 "run",                              // Command to Codeception
                 "--no-colors",                      // Forcing Codeception to not use colors, if enabled in codeception.yml
-                "--config=\"{$this->site->getConfig()}\"", // Full path & file of Codeception
+                //"--config=\"{$this->site->getConfig()}\"", // Full path & file of Codeception
             ),
             $env,
             array(
@@ -358,6 +447,47 @@ class Codeception
             $response['passed'] = $test->passed();
             $response['state']  = $test->getState();
             $response['title']  = $test->getTitle();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Given a test type & hash, handle the module run response for the AJAX call.
+     *
+     * @param  string $type Module type (Unit, Acceptance, Functional)
+     * @param  string $hash Hash of the module.
+     * @return array  Array of flags used in the JSON respone.
+     */
+    public function getModuleRunResponse($type, $hash)
+    {
+        $response = array(
+            'message'     => NULL,
+            'run'         => FALSE,
+            'passed'      => FALSE,
+            'state'       => 'error',
+            'log'         => NULL
+        );
+
+        // If Codeceptions not properly configured, the test won't be found
+        // and it won't be run.
+        if (! $this->ready())
+            $response['message'] = 'The Codeception configuration could not be loaded.';
+
+        // If the test can't be found, we can't run the test.
+        if (! $module = $this->getModule($type, $hash))
+            $response['message'] = 'The test could not be found.';
+
+        // If there's no error message set yet, it means we're good to go!
+        if (is_null($response['message'])) {
+
+            // Run the test!
+            $module             = $this->runModule($module);
+            $response['run']    = $module->ran();
+            $response['log']    = $module->getLog();
+            $response['passed'] = $module->passed();
+            $response['state']  = $module->getState();
+            $response['title']  = $module->getName();
         }
 
         return $response;

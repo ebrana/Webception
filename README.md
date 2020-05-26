@@ -1,12 +1,20 @@
 # Webception
 
-[![Join the chat at https://gitter.im/jayhealey/Webception](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jayhealey/Webception?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+eBRÁNA fork of [jayhealey/Webception](https://github.com/jayhealey/Webception) with following modifications:
+  * support `include` directives in `codeception.yml` files
+  * allow running of all tests of given "module" in single `codecept` call
+  * run `codecept` with working dir of given test/module
+  * minor visual improvements 
+  
+------------
+
 
 #### Web Interface for running [Codeception](http://codeception.com) tests.
 
-Built with [Slim PHP framework](http://www.slimframework.com/) and [Foundation CSS framework](http://foundation.zurb.com/).
+Built with [Slim PHP framework](http://www.slimframework.com/) and [Foundation CSS framework](http://foundation.zurb.com/). 
 
-------------
+[![Join the chat at https://gitter.im/jayhealey/Webception](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jayhealey/Webception?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 **What does it do?**
 

@@ -20,27 +20,49 @@
 */
 
 $app->get('/', function ($site = null) use ($app) {
+    if ($app->request->params('hash')) {
+        $tests = FALSE;
+        $test_count = 0;
+        $webception = $app->config('webception');
+        $codeception = $app->codeception;
+        $environments = array();
 
-    $tests       = FALSE;
-    $test_count  = 0;
-    $webception  = $app->config('webception');
-    $codeception = $app->codeception;
-    $environments = array();
-
-    if ($codeception->ready()) {
-        $tests      = $codeception->getTests();
-        $test_count = $codeception->getTestTally();
-        if (isset($codeception->config['env'])) {
-            $environments = $codeception->config['env'];
+        if ($codeception->ready()) {
+            $tests = $codeception->getTests();
+            $test_count = $codeception->getTestTally();
+            if (isset($codeception->config['env'])) {
+                $environments = $codeception->config['env'];
+            }
         }
-    }
 
-    $app->render('dashboard.html', array(
-        'name'        => $app->getName(),
-        'webception'  => $webception,
-        'codeception' => $codeception,
-        'tests'       => $tests,
-        'test_count'  => $test_count,
-        'environments'=> $environments
-    ));
+        $app->render('dashboard.html', array(
+            'name' => $app->getName(),
+            'webception' => $webception,
+            'codeception' => $codeception,
+            'tests' => $tests,
+            'test_count' => $test_count,
+            'environments' => $environments
+        ));
+    } else {
+        $modules       = FALSE;
+        $webception  = $app->config('webception');
+        $codeception = $app->codeception;
+        $environments = array();
+
+        if ($codeception->ready()) {
+            $modules    = $codeception->getModules();
+            if (isset($codeception->config['env'])) {
+                $environments = $codeception->config['env'];
+            }
+        }
+
+        $app->render('modules.html', array(
+            'name'        => $app->getName(),
+            'webception'  => $webception,
+            'codeception' => $codeception,
+            'module_environments'       => $modules,
+            'modules_count'  => count($modules),
+            'environments'=> $environments
+        ));
+    }
 });

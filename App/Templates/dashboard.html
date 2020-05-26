@@ -43,12 +43,12 @@
                 {% if attribute(environments, type) is defined %}
 	                {% if attribute(environments, type)|length > 0 %}
 
-	                <div>
-	                    <h5><strong>Environments:</strong></h5>
+                    <div style="padding-top: 20px;">
+	                    <!--<h5><strong>Environments:</strong></h5>-->
 
 	                    {% for env in attribute(environments, type) %}
 
-	                    <input type='checkbox' name='envs[]' id='{{ type }}_{{ env }}_envs' />
+	                    <input type='checkbox' name='envs[]' id='{{ type }}_{{ env }}_envs' {{ env == 'browserstack' ? 'checked' : '' }} />
 	                    <label for='{{ type }}_{{ env }}_envs'>
 	                        <em>{{ env|capitalize }}</em>
 	                    </label>

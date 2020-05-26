@@ -242,7 +242,7 @@ APP = {
             APP.state.vars.stopped = chosenState.stopped;
 
             // Update the message box (if required)
-            $(APP.toolbar.vars.eMessageContainer, $status).html(message);
+            $(APP.toolbar.vars.eMessageContainer, $status).html(location.href.includes('?') ? message : message.replace(/test/ig, 'module'));
 
             // Update the class & content of the state button.
             $(APP.toolbar.vars.eButtonState, $status)
@@ -314,7 +314,7 @@ APP = {
             // All possible Toolbar states
             states : {
                 'ready': {
-                    message: '<strong>Ready to run </strong> %(tests)s tests.',
+                    message: '<strong>Ready to run </strong> %(tests)s tests',
                     buttonReadyCss: 'secondary disabled',
                     buttonReadyLabel: 'READY',
                     buttonActionCss: 'success',
