@@ -76,6 +76,7 @@ class Codeception
             $this->config = array_merge($config, $this->yaml);
             $this->loadTests();
             $this->loadModules();
+            $this->loadGroups();
         }
     }
 
@@ -204,6 +205,16 @@ class Codeception
         }
     }
 
+    public function loadGroups()
+    {
+        foreach ($this->config['groups'] as $name) {
+            $group = new Group();
+            $group->init($name);
+            $this->addGroup($group);
+            unset($group);
+        }
+    }
+
     /**
      * Add a Test to the list.
      *
@@ -228,6 +239,16 @@ class Codeception
     }
 
     /**
+     * Add a Group to the list.
+     *
+     * @param Test $test
+     */
+    public function addGroup(Group $group)
+    {
+        $this->groups[$group->getName()] = $group;
+    }
+
+    /**
      * Get the complete test list.
      *
      * @param array $test List of loaded Tests.
@@ -245,6 +266,11 @@ class Codeception
     public function getModules()
     {
         return $this->modules;
+    }
+
+    public function getGroups()
+    {
+        return $this->groups;
     }
 
     /**
@@ -266,6 +292,14 @@ class Codeception
     {
         if (isset($this->modules[$type][$hash]))
             return $this->modules[$type][$hash];
+
+        return FALSE;
+    }
+
+    public function getGroup($name)
+    {
+        if (isset($this->groups[$name]))
+            return $this->groups[$name];
 
         return FALSE;
     }
@@ -310,7 +344,7 @@ class Codeception
     }
 
     /**
-     * Given a test, run the Codeception test.
+     * Given a module, run the Codeception module.
      *
      * @param  Module $module Current test to Run.
      * @return Module $module Updated test with log and result.
@@ -336,6 +370,35 @@ class Codeception
         $module->setLog($output);
 
         return $module;
+    }
+
+    /**
+     * Given a module, run the Codeception module.
+     *
+     * @param  Group $module Current test to Run.
+     * @return Group $module Updated test with log and result.
+     */
+    public function runGroup(Group $group)
+    {
+        $env = $this->getEnvironments($group->getType());
+
+        // Get the full command path to run the test.
+        $command = $this->getCommandPath('', '--group '.$group->getName(), $env);
+
+        // Attempt to set the correct writes to Codeceptions Log path.
+        @chmod($this->getLogPath(), 0777);
+
+        // eBRÁNA - hack to set module-specific CWD
+        $path = '/home/www/dvorak-platform.edevel.cz/application';
+
+        // Run the helper function (as it's not specific to Codeception)
+        // which returns the result of running the terminal command into an array.
+        $output  = array_merge([$path, $command], run_terminal_command($command, $path));
+
+        // Add the log to the test which also checks to see if there was a pass/fail.
+        $group->setLog($output);
+
+        return $group;
     }
 
     public function getEnvironments($type)
@@ -453,7 +516,7 @@ class Codeception
     }
 
     /**
-     * Given a test type & hash, handle the module run response for the AJAX call.
+     * Given a module type & hash, handle the module run response for the AJAX call.
      *
      * @param  string $type Module type (Unit, Acceptance, Functional)
      * @param  string $hash Hash of the module.
@@ -476,7 +539,7 @@ class Codeception
 
         // If the test can't be found, we can't run the test.
         if (! $module = $this->getModule($type, $hash))
-            $response['message'] = 'The test could not be found.';
+            $response['message'] = 'The module could not be found.';
 
         // If there's no error message set yet, it means we're good to go!
         if (is_null($response['message'])) {
@@ -488,6 +551,46 @@ class Codeception
             $response['passed'] = $module->passed();
             $response['state']  = $module->getState();
             $response['title']  = $module->getName();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Given a group ID, handle the group run response for the AJAX call.
+     *
+     * @param  string $groupId Group ID
+     * @return array  Array of flags used in the JSON respone.
+     */
+    public function getGroupRunResponse($groupId)
+    {
+        $response = array(
+            'message'     => NULL,
+            'run'         => FALSE,
+            'passed'      => FALSE,
+            'state'       => 'error',
+            'log'         => NULL
+        );
+
+        // If Codeceptions not properly configured, the test won't be found
+        // and it won't be run.
+        if (! $this->ready())
+            $response['message'] = 'The Codeception configuration could not be loaded.';
+
+        // If the test can't be found, we can't run the test.
+        if (! $group = $this->getGroup($groupId))
+            $response['message'] = 'The group could not be found.';
+
+        // If there's no error message set yet, it means we're good to go!
+        if (is_null($response['message'])) {
+
+            // Run the test!
+            $group              = $this->runGroup($group);
+            $response['run']    = $group->ran();
+            $response['log']    = $group->getLog();
+            $response['passed'] = $group->passed();
+            $response['state']  = $group->getState();
+            $response['title']  = $group->getName();
         }
 
         return $response;

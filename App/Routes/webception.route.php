@@ -66,3 +66,28 @@ $app->get('/', function ($site = null) use ($app) {
         ));
     }
 });
+
+$app->get('/groups', function ($site = null) use ($app) {
+
+        $modules       = FALSE;
+        $webception  = $app->config('webception');
+        $codeception = $app->codeception;
+        $environments = array();
+
+        if ($codeception->ready()) {
+            $groups = $codeception->getGroups();
+            if (isset($codeception->config['env'])) {
+                $environments = $codeception->config['env'];
+            }
+        }
+
+        $app->render('groups.html', array(
+            'name'        => $app->getName(),
+            'webception'  => $webception,
+            'codeception' => $codeception,
+            'groups'      => $groups,
+            'groups_count'=> count($groups),
+            'type'        => 'webdriver',
+            'environments'=> $environments
+        ));
+});

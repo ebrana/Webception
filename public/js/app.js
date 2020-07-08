@@ -242,7 +242,7 @@ APP = {
             APP.state.vars.stopped = chosenState.stopped;
 
             // Update the message box (if required)
-            $(APP.toolbar.vars.eMessageContainer, $status).html(location.href.includes('?') ? message : message.replace(/test/ig, 'module'));
+            $(APP.toolbar.vars.eMessageContainer, $status).html(location.href.includes('?') ? message : message.replace(/test/ig, location.href.includes('/groups') ? 'group' : 'module'));
 
             // Update the class & content of the state button.
             $(APP.toolbar.vars.eButtonState, $status)

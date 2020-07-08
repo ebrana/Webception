@@ -17,13 +17,16 @@
                     <li {% if codeception.site.hasChoices() %}class="has-dropdown"{% endif %}>
                         {% if codeception.site.ready() %}
                             {% if module_environments %}
-                                <a href="#"><strong>All modules</strong></a>
+                                <a href="#"><strong>Modules</strong></a>
+                            {% elseif groups %}
+                                <a href="#"><strong>Groups</strong></a>
                             {% else %}
                                 <a href="#"><strong>{{ codeception.site.getName() }}</strong></a>
                             {% endif %}
                             {% if codeception.site.hasChoices() %}
                                 <ul class="dropdown">
-                                    <li><a href="/">All modules</a></li>
+                                    <li><a href="/">Modules</a></li>
+                                    <li><a href="/groups">Groups</a></li>
                                 {% for hash, site in codeception.site.getSites() %}
                                     <li><a href="/?hash={{ hash }}">{{ site.name }}</a></li>
                                 {% endfor %}
