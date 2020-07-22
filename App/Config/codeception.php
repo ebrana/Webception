@@ -17,10 +17,10 @@ if (file_exists(__DIR__.'/codeception-local.php')) {
 }
 
 // eBRÁNA - load modules
-$implementation = str_replace('webception.', '', $_SERVER['HTTP_HOST']);
-$applicationDir = '/home/www/' . $implementation . '/application';
+define('EBRANA_IMPLEMENTATION', str_replace('webception.', '', $_SERVER['HTTP_HOST']));
+define('EBRANA_APPLICATION_PATH', '/home/www/' . EBRANA_IMPLEMENTATION . '/application');
 
-$modulesDir = $applicationDir.DIRECTORY_SEPARATOR.'modules';
+$modulesDir = EBRANA_APPLICATION_PATH.DIRECTORY_SEPARATOR.'modules';
 $modules = array_diff(scandir($modulesDir), array('..', '.'));
 
 $moduleConfigs = array_map(function ($module) use ($modulesDir) {
@@ -51,7 +51,7 @@ return array_merge_recursive(array(
     */
 
     'sites' => array_merge(
-        ['All tests' => $applicationDir.DIRECTORY_SEPARATOR.'codeception.yml'],
+        ['All tests' => EBRANA_APPLICATION_PATH.DIRECTORY_SEPARATOR.'codeception.yml'],
         $existingModuleConfigs
     ),
 
@@ -105,7 +105,7 @@ return array_merge_recursive(array(
     |
     */
 
-    'executable' => $applicationDir.
+    'executable' => EBRANA_APPLICATION_PATH.
         DIRECTORY_SEPARATOR.'vendor'.
         DIRECTORY_SEPARATOR.'codeception'.
         DIRECTORY_SEPARATOR.'codeception'.

@@ -389,7 +389,7 @@ class Codeception
         @chmod($this->getLogPath(), 0777);
 
         // eBRÁNA - hack to set module-specific CWD
-        $path = '/home/www/dvorak-platform.edevel.cz/application';
+        $path = EBRANA_APPLICATION_PATH;
 
         // Run the helper function (as it's not specific to Codeception)
         // which returns the result of running the terminal command into an array.
