@@ -470,6 +470,9 @@ class Codeception
             $params[] = "--steps";
         }
 
+        // eBRÁNA pass user IP to allow running webdriver locally
+        array_unshift($params, "SSH_CLIENT=".$_SERVER['REMOTE_ADDR']);
+
         // Build the command to be run.
         return implode(' ', $params);
     }
