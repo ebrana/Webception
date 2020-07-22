@@ -17,9 +17,9 @@ if (! function_exists('run_terminal_command')) {
      * @param  string $command
      * @return array  Each array entry is a line of output from running the command.
      */
-    function run_terminal_command($command, $cwd = '')
+    function run_terminal_command($command)
     {
-        exec('cd ' . $cwd . ' && ' . $command, $output);
+        exec('cd ' . EBRANA_APPLICATION_PATH . ' && ' . $command, $output);
         return $output;
 
         // USING EXEC TO AVOID STUCKED PROCESSES

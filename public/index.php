@@ -83,8 +83,8 @@ $app->container->singleton('site', function () use ($app, $config) {
 
     if (! is_null($hash_in_querystring) && $hash_in_querystring !== FALSE)
         $hash = $hash_in_querystring;
-    elseif (isset($_SESSION[HASH]))
-        $hash = $_SESSION[HASH];
+    //elseif (isset($_SESSION[HASH]))
+    //    $hash = $_SESSION[HASH];
 
     // Setup the site class with all the available sites from the
     // Codeception configuration
@@ -94,7 +94,7 @@ $app->container->singleton('site', function () use ($app, $config) {
     $site->set($hash);
 
     // Update the users session to use the chosen site
-    $_SESSION[HASH] = $site->getHash();
+    //$_SESSION[HASH] = $site->getHash();
 
     return $site;
 });

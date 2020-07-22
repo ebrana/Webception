@@ -119,6 +119,9 @@ class Codeception
 
         $config['env'] = array();
 
+        // eBRANA prefer groups from config file
+        unset($config['groups']);
+
         if (isset($this->config['tests'])) {
             foreach ($this->config['tests'] as $type => $active) {
 
@@ -324,18 +327,18 @@ class Codeception
     {
         $env = $this->getEnvironments($test->getType());
 
+        // eBRÁNA - hack to set module-specific CWD
+        $modulePath = preg_replace('/.*application\/modules\/(\w+)\/.*/', '$1', $test->getPathname());
+
         // Get the full command path to run the test.
-        $command = $this->getCommandPath($test->getType(), $test->getFilename(), $env);
+        $command = $this->getCommandPath($test->getType(), $test->getFilename(), $modulePath, $env);
 
         // Attempt to set the correct writes to Codeceptions Log path.
         @chmod($this->getLogPath(), 0777);
 
-        // eBRÁNA - hack to set module-specific CWD
-        $modulePath = preg_replace('/(.*application\/modules\/\w+)\/.*/', '$1', $test->getPathname());
-
         // Run the helper function (as it's not specific to Codeception)
         // which returns the result of running the terminal command into an array.
-        $output  = array_merge([$command], run_terminal_command($command, $modulePath));
+        $output  = array_merge([$command], run_terminal_command($command));
 
         // Add the log to the test which also checks to see if there was a pass/fail.
         $test->setLog($output);
@@ -354,17 +357,14 @@ class Codeception
         $env = $this->getEnvironments($module->getType());
 
         // Get the full command path to run the test.
-        $command = $this->getCommandPath($module->getType(), '', $env);
+        $command = $this->getCommandPath($module->getType(), '', $module->getName(), $env);
 
         // Attempt to set the correct writes to Codeceptions Log path.
         @chmod($this->getLogPath(), 0777);
 
-        // eBRANA hack to set module-specific CWD
-        $modulePath = preg_replace('/(.*application\/modules\/\w+)\/.*/', '$1', $module->getPath());
-
         // Run the helper function (as it's not specific to Codeception)
         // which returns the result of running the terminal command into an array.
-        $output  = array_merge([$modulePath, $command], run_terminal_command($command, $modulePath));
+        $output  = array_merge([$command], run_terminal_command($command));
 
         // Add the log to the test which also checks to see if there was a pass/fail.
         $module->setLog($output);
@@ -383,7 +383,7 @@ class Codeception
         $env = $this->getEnvironments($group->getType());
 
         // Get the full command path to run the test.
-        $command = $this->getCommandPath('', '--group '.$group->getName(), $env);
+        $command = $this->getCommandPath($group->getName(), '', '', $env);
 
         // Attempt to set the correct writes to Codeceptions Log path.
         @chmod($this->getLogPath(), 0777);
@@ -393,7 +393,7 @@ class Codeception
 
         // Run the helper function (as it's not specific to Codeception)
         // which returns the result of running the terminal command into an array.
-        $output  = array_merge([$path, $command], run_terminal_command($command, $path));
+        $output  = array_merge([$path, $command], run_terminal_command($command));
 
         // Add the log to the test which also checks to see if there was a pass/fail.
         $group->setLog($output);
@@ -411,7 +411,7 @@ class Codeception
 
                     $value = str_replace($type . '_', '', $value);
                     if (isset($this->config['env'][$type]) && in_array($value, $this->config['env'][$type])) {
-                        $env[] = '--env=' . $value;
+                        $env[] = '-Denv=' . $value;
                     }
 
                 }
@@ -434,26 +434,28 @@ class Codeception
     /**
      * Full command to run a Codeception test.
      *
-     * @param  string $type     Test Type (Acceptance, Functional, Unit)
-     * @param  string $filename Name of the Test
-     * @param  string $env      Array like [ --env=envname ] if required
+     * @param  string $group     Test Type (Acceptance, Functional, Unit)
+     * @param  string $test      Name of the Test
+     * @param  string $module    Name of the Module
+     * @param  string $env       Array like [ --env=envname ] if required
      * @return string Full command to execute Codeception with requred parameters.
      */
-    public function getCommandPath($type, $filename, $env = [])
+    public function getCommandPath($group, $test, $module, $env = [])
     {
         // Build all the different parameters as part of the console command
         $params = array_merge(
             array(
                 $this->config['executable'],        // Codeception Executable
-                "run",                              // Command to Codeception
-                "--no-colors",                      // Forcing Codeception to not use colors, if enabled in codeception.yml
+                "test",                   // Command to Codeception
+                //"--no-colors",                      // Forcing Codeception to not use colors, if enabled in codeception.yml
                 //"--config=\"{$this->site->getConfig()}\"", // Full path & file of Codeception
             ),
             $env,
             array(
-                $type,                              // Test Type (Acceptance, Unit, Functional)
-                $filename,                          // Filename of the Codeception test
-                "2>&1"                              // Added to force output of running executable to be streamed out
+                $group ? '-Dgroup='.$group : '',        // Test Type (Acceptance, Unit, Functional)
+                $test ? '-Dtest='.$test : '',           // Filename of the Codeception test
+                $module ? '-Dmodule='.$module : '',           // Filename of the Codeception test
+                "2>&1"                                // Added to force output of running executable to be streamed out
             )
         );
 
@@ -463,11 +465,11 @@ class Codeception
         }
         //Add Debug command to command line if set in configuration
         if(isset($this->config['debug']) && $this->config['debug']) {
-            $params[] = "--debug";
+            $params[] = "-Ddebug";
         }
         //Add Steps command to command line if set in configuration
         if(isset($this->config['steps']) && $this->config['steps']) {
-            $params[] = "--steps";
+            $params[] = "-Dsteps";
         }
 
         // eBRÁNA pass user IP to allow running webdriver locally

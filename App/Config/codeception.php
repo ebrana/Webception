@@ -84,6 +84,7 @@ return array_merge_recursive(array(
         'ShortTest',
         'Thread1',
         'Thread2',
+
     ],
 
     /*
@@ -91,7 +92,7 @@ return array_merge_recursive(array(
     | Execute Codeception as a PHP command
     |--------------------------------------------------------------------------
     */
-    'run_php'        => TRUE,
+    'run_php'        => FALSE,
 
     /*
     |--------------------------------------------------------------------------
@@ -106,10 +107,8 @@ return array_merge_recursive(array(
     */
 
     'executable' => EBRANA_APPLICATION_PATH.
-        DIRECTORY_SEPARATOR.'vendor'.
-        DIRECTORY_SEPARATOR.'codeception'.
-        DIRECTORY_SEPARATOR.'codeception'.
-        DIRECTORY_SEPARATOR.'codecept',
+        DIRECTORY_SEPARATOR.'bin'.
+        DIRECTORY_SEPARATOR.'phing',
 
 
     /*
@@ -120,7 +119,7 @@ return array_merge_recursive(array(
 
     'tests' => array(
         'webdriver'  => true,
-        'phpbrowser' => true,
+        'phpbrowser' => false,
         'unit'       => false,
     ),
 
